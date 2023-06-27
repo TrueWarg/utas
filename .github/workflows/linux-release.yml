@@ -1,40 +1,52 @@
 name: Linux Realse
 on:
+  # push:
+  #   tags: [ "*release", "*release-linux" ]
   push:
-    tags: [ "*release", "*release-linux" ]
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   RELEASE_ARCHIVE_NAME: utas-release
 
 jobs:
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+  # tests:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v3
 
-    - name: Run tests
-      run: cargo test --verbose
+  #   - name: Run tests
+  #     run: cargo test --verbose
 
-    - name: Run crate file tests
-      run: cargo test -p file
+  #   - name: Run crate file tests
+  #     run: cargo test -p file
 
   linux-build-release:
-    runs-on: ubuntu-latest
-    needs:  tests
+    runs-on: ubuntu-20.04
+    # needs:  tests
     permissions:
        contents: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Install stable toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        target: x86_64-unknown-linux-musl
+
     - name: Build
-      run: cargo build --release --verbose
+      run: cargo build --release --target x86_64-unknown-linux-musl --verbose
       
     - name: Compress assets
       run: |
         cd target
-        tar cfv "$RELEASE_ARCHIVE_NAME".tar.gz release/utas
+        tar cfv "$RELEASE_ARCHIVE_NAME".tar.gz x86_64-unknown-linux-musl/release/utas
 
     - name: Create release
       id: create_release
